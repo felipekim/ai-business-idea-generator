@@ -15,20 +15,27 @@ class BusinessIdea(db.Model):
     revenue_1_year = db.Column(db.Integer, nullable=False)  # in dollars
     revenue_5_year = db.Column(db.Integer, nullable=False)  # in dollars
     
-    # Scoring dimensions (1-10 scale)
-    cost_to_build_score = db.Column(db.Float, nullable=False)
-    ease_of_implementation_score = db.Column(db.Float, nullable=False)
-    market_size_score = db.Column(db.Float, nullable=False)
-    competition_level_score = db.Column(db.Float, nullable=False)
-    problem_severity_score = db.Column(db.Float, nullable=False)
-    founder_fit_score = db.Column(db.Float, nullable=False)
-    total_score = db.Column(db.Float, nullable=False)
+    # Scoring dimensions (1-10 scale) - keeping for backward compatibility
+    cost_to_build_score = db.Column(db.Float, nullable=True, default=6.0)
+    ease_of_implementation_score = db.Column(db.Float, nullable=True, default=6.0)
+    market_size_score = db.Column(db.Float, nullable=True, default=6.0)
+    competition_level_score = db.Column(db.Float, nullable=True, default=6.0)
+    problem_severity_score = db.Column(db.Float, nullable=True, default=6.0)
+    founder_fit_score = db.Column(db.Float, nullable=True, default=6.0)
+    total_score = db.Column(db.Float, nullable=True, default=6.0)
+    
+    # Enhanced scoring system (stored as JSON)
+    scores = db.Column(db.Text, nullable=True)  # JSON string with detailed scores
     
     # Validation evidence (stored as JSON)
     validation_evidence = db.Column(db.Text, nullable=True)  # JSON string
     
+    # Enhanced data fields
+    enhanced_data = db.Column(db.Text, nullable=True)  # JSON string with market research, financial analysis, etc.
+    
     # Metadata
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    generated_at = db.Column(db.DateTime, default=datetime.utcnow)  # For compatibility
     is_featured = db.Column(db.Boolean, default=False)
     niche = db.Column(db.String(100), nullable=True)
     tags = db.Column(db.String(500), nullable=True)  # comma-separated
@@ -49,21 +56,48 @@ class BusinessIdea(db.Model):
             'launch_cost': self.launch_cost,
             'revenue_1_year': self.revenue_1_year,
             'revenue_5_year': self.revenue_5_year,
-            'scores': {
-                'cost_to_build': self.cost_to_build_score,
-                'ease_of_implementation': self.ease_of_implementation_score,
-                'market_size': self.market_size_score,
-                'competition_level': self.competition_level_score,
-                'problem_severity': self.problem_severity_score,
-                'founder_fit': self.founder_fit_score,
-                'total': self.total_score
-            },
-            'validation_evidence': json.loads(self.validation_evidence) if self.validation_evidence else None,
+            'scores': self.get_scores(),
+            'validation_evidence': self.get_validation_evidence(),
+            'enhanced_data': self.get_enhanced_data(),
             'created_at': self.created_at.isoformat(),
+            'generated_at': self.generated_at.isoformat() if self.generated_at else self.created_at.isoformat(),
             'is_featured': self.is_featured,
             'niche': self.niche,
             'tags': self.tags.split(',') if self.tags else []
         }
+    
+    def get_scores(self):
+        """Get scores as a dictionary (enhanced or legacy)"""
+        if self.scores:
+            try:
+                return json.loads(self.scores)
+            except:
+                pass
+        
+        # Fallback to legacy scores
+        return {
+            'cost_to_build': self.cost_to_build_score or 6.0,
+            'ease_of_implementation': self.ease_of_implementation_score or 6.0,
+            'market_size': self.market_size_score or 6.0,
+            'competition_level': self.competition_level_score or 6.0,
+            'problem_severity': self.problem_severity_score or 6.0,
+            'founder_fit': self.founder_fit_score or 6.0,
+            'total': self.total_score or 6.0
+        }
+    
+    def set_scores(self, scores_dict):
+        """Set scores from a dictionary"""
+        self.scores = json.dumps(scores_dict)
+        
+        # Also update legacy fields for compatibility
+        if isinstance(scores_dict, dict):
+            self.cost_to_build_score = scores_dict.get('cost_to_build', 6.0)
+            self.ease_of_implementation_score = scores_dict.get('ease_of_implementation', 6.0)
+            self.market_size_score = scores_dict.get('market_size', 6.0)
+            self.competition_level_score = scores_dict.get('competition_level', 6.0)
+            self.problem_severity_score = scores_dict.get('problem_severity', 6.0)
+            self.founder_fit_score = scores_dict.get('founder_fit', 6.0)
+            self.total_score = scores_dict.get('total', 6.0)
     
     def set_validation_evidence(self, evidence_dict):
         """Set validation evidence from a dictionary"""
@@ -71,7 +105,21 @@ class BusinessIdea(db.Model):
     
     def get_validation_evidence(self):
         """Get validation evidence as a dictionary"""
-        return json.loads(self.validation_evidence) if self.validation_evidence else {}
+        try:
+            return json.loads(self.validation_evidence) if self.validation_evidence else {}
+        except:
+            return {}
+    
+    def set_enhanced_data(self, enhanced_dict):
+        """Set enhanced data from a dictionary"""
+        self.enhanced_data = json.dumps(enhanced_dict)
+    
+    def get_enhanced_data(self):
+        """Get enhanced data as a dictionary"""
+        try:
+            return json.loads(self.enhanced_data) if self.enhanced_data else {}
+        except:
+            return {}
 
 class ValidationRequest(db.Model):
     id = db.Column(db.Integer, primary_key=True)

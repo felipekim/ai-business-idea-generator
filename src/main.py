@@ -22,9 +22,13 @@ app.config['SECRET_KEY'] = os.getenv('FLASK_SECRET_KEY', 'asdf#FGSgvasgf$5$WGT')
 # Enable CORS for all routes
 CORS(app, origins="*")
 
+# Import enhanced ideas blueprint
+from src.routes.enhanced_ideas import enhanced_ideas_bp
+
 # Register blueprints with login protection
 app.register_blueprint(user_bp, url_prefix='/api')
 app.register_blueprint(ideas_bp, url_prefix='/api')
+app.register_blueprint(enhanced_ideas_bp, url_prefix='/api/enhanced')
 app.register_blueprint(admin_bp, url_prefix='/api/admin')
 
 # Database configuration
