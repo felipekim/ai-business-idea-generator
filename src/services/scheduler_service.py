@@ -95,11 +95,14 @@ class SchedulerService:
                         }
                         ideas_data.append(idea_dict)
                     
-                    # Send email
-                    email_sent = self.email_service.send_daily_ideas_email(
-                        ideas_data, 
-                        'ideasaibusiness@gmail.com'
-                    )
+                    # Email delivery disabled per user request
+                    # email_sent = self.email_service.send_daily_ideas_email(
+                    #     ideas_data, 
+                    #     'ideasaibusiness@gmail.com'
+                    # )
+                    email_sent = False  # Email delivery disabled
+                    
+                    print(f"[{datetime.now()}] Email delivery disabled - ideas generated and stored in database")
                     
                     if email_sent:
                         stats.emails_sent += 1
