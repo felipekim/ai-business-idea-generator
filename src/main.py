@@ -16,7 +16,7 @@ from src.auth import login_required, check_auth, ADMIN_PASSWORD, LOGIN_TEMPLATE
 # Load environment variables
 load_dotenv()
 
-app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), 'static'))
+app = Flask(__name__, static_folder=os.path.join(os.path.dirname(os.path.dirname(__file__)), 'static'))
 app.config['SECRET_KEY'] = os.getenv('FLASK_SECRET_KEY', 'asdf#FGSgvasgf$5$WGT')
 
 # Enable CORS for all routes
