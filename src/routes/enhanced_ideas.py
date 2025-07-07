@@ -7,6 +7,8 @@ from src.models.business_idea import BusinessIdea, ValidationRequest, db
 from src.services.enhanced_ai_service import EnhancedAIService
 from src.services.market_research_service import MarketResearchService
 from src.services.financial_analysis_service import FinancialAnalysisService
+from src.evaluation.custom_scoring_engine import CustomScoringEngine
+from src.analytics.integrated_enhanced_analytics import IntegratedEnhancedAnalytics
 
 enhanced_ideas_bp = Blueprint('enhanced_ideas', __name__)
 
@@ -14,6 +16,8 @@ enhanced_ideas_bp = Blueprint('enhanced_ideas', __name__)
 enhanced_ai_service = EnhancedAIService()
 market_research_service = MarketResearchService()
 financial_analysis_service = FinancialAnalysisService()
+custom_scoring_engine = CustomScoringEngine()
+analytics_engine = IntegratedEnhancedAnalytics()
 
 @enhanced_ideas_bp.route('/generate-enhanced', methods=['POST'])
 @login_required
@@ -42,8 +46,21 @@ def generate_enhanced_ideas():
                 financial_analysis = financial_analysis_service.analyze_financial_projections(idea)
                 idea['financial_analysis'] = financial_analysis
                 
-                # Calculate enhanced overall score
-                idea['enhanced_score'] = calculate_enhanced_overall_score(idea)
+                # Calculate enhanced overall score using custom scoring engine
+                print(f"Calculating custom scores for: {idea.get('name', 'Unknown')}")
+                custom_scores = custom_scoring_engine.evaluate_business_idea(idea)
+                idea['custom_scores'] = custom_scores
+                
+                # Store evaluation in analytics engine for historical tracking
+                analytics_engine.store_evaluation_result(
+                    idea_name=idea.get('name', 'Unknown'),
+                    scores=custom_scores,
+                    metadata={
+                        'market_research': market_research,
+                        'financial_analysis': financial_analysis,
+                        'generation_timestamp': datetime.utcnow().isoformat()
+                    }
+                )
                 
                 # Save to database
                 business_idea = BusinessIdea(
@@ -64,8 +81,9 @@ def generate_enhanced_ideas():
                     enhanced_data=json.dumps({
                         'market_research': market_research,
                         'financial_analysis': financial_analysis,
-                        'enhanced_score': idea['enhanced_score'],
-                        'full_idea_data': idea
+                        'custom_scores': custom_scores,
+                        'full_idea_data': idea,
+                        'analytics_stored': True
                     })
                 )
                 
@@ -354,6 +372,131 @@ def get_detailed_idea(idea_id):
         
     except Exception as e:
         print(f"Error getting detailed idea: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@enhanced_ideas_bp.route('/analytics/historical', methods=['GET'])
+@login_required
+def get_historical_analysis():
+    """Get historical analysis and trends"""
+    try:
+        # Get query parameters
+        days = request.args.get('days', 30, type=int)
+        
+        # Get historical analysis
+        historical_data = analytics_engine.get_historical_analysis(days=days)
+        
+        return jsonify({
+            'success': True,
+            'historical_analysis': historical_data,
+            'analysis_period_days': days,
+            'timestamp': datetime.utcnow().isoformat()
+        })
+        
+    except Exception as e:
+        print(f"Error getting historical analysis: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@enhanced_ideas_bp.route('/analytics/trends', methods=['GET'])
+@login_required
+def get_trend_analysis():
+    """Get trend analysis across different metrics"""
+    try:
+        # Get trend analysis
+        trend_data = analytics_engine.get_trend_analysis()
+        
+        return jsonify({
+            'success': True,
+            'trend_analysis': trend_data,
+            'timestamp': datetime.utcnow().isoformat()
+        })
+        
+    except Exception as e:
+        print(f"Error getting trend analysis: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@enhanced_ideas_bp.route('/analytics/insights', methods=['GET'])
+@login_required
+def get_analytics_insights():
+    """Get comprehensive analytics insights and recommendations"""
+    try:
+        # Get comprehensive insights
+        insights_data = analytics_engine.get_comprehensive_insights()
+        
+        return jsonify({
+            'success': True,
+            'insights': insights_data,
+            'timestamp': datetime.utcnow().isoformat()
+        })
+        
+    except Exception as e:
+        print(f"Error getting analytics insights: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@enhanced_ideas_bp.route('/scoring/configuration', methods=['GET', 'POST'])
+@login_required
+def manage_scoring_configuration():
+    """Get or update custom scoring configuration"""
+    try:
+        if request.method == 'GET':
+            # Get current configuration
+            config = custom_scoring_engine.get_configuration()
+            return jsonify({
+                'success': True,
+                'configuration': config,
+                'timestamp': datetime.utcnow().isoformat()
+            })
+        
+        elif request.method == 'POST':
+            # Update configuration
+            data = request.get_json()
+            new_config = data.get('configuration', {})
+            
+            # Update scoring engine configuration
+            custom_scoring_engine.update_configuration(new_config)
+            
+            return jsonify({
+                'success': True,
+                'message': 'Scoring configuration updated successfully',
+                'new_configuration': new_config,
+                'timestamp': datetime.utcnow().isoformat()
+            })
+            
+    except Exception as e:
+        print(f"Error managing scoring configuration: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@enhanced_ideas_bp.route('/scoring/evaluate', methods=['POST'])
+@login_required
+def evaluate_with_custom_scoring():
+    """Evaluate a business idea with custom scoring engine"""
+    try:
+        data = request.get_json()
+        idea_data = data.get('idea_data', {})
+        
+        if not idea_data:
+            return jsonify({'success': False, 'error': 'Idea data required'}), 400
+        
+        # Evaluate with custom scoring engine
+        scores = custom_scoring_engine.evaluate_business_idea(idea_data)
+        
+        # Store in analytics for tracking
+        analytics_engine.store_evaluation_result(
+            idea_name=idea_data.get('name', 'Custom Evaluation'),
+            scores=scores,
+            metadata={
+                'evaluation_type': 'custom_scoring',
+                'timestamp': datetime.utcnow().isoformat()
+            }
+        )
+        
+        return jsonify({
+            'success': True,
+            'scores': scores,
+            'timestamp': datetime.utcnow().isoformat()
+        })
+        
+    except Exception as e:
+        print(f"Error evaluating with custom scoring: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 def calculate_enhanced_overall_score(idea: dict) -> dict:

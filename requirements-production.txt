@@ -1,0 +1,72 @@
+# Production Requirements for AI Business Idea Generator
+# Core Framework
+Flask==2.3.3
+Flask-CORS==4.0.0
+Flask-SQLAlchemy==3.0.5
+Flask-Migrate==4.0.5
+Flask-Limiter==3.5.0
+Flask-Caching==2.1.0
+
+# Database
+SQLAlchemy==2.0.21
+psycopg2-binary==2.9.7  # PostgreSQL support
+sqlite3  # Built-in SQLite support
+
+# AI and ML
+openai==0.28.1
+scikit-learn==1.3.0
+numpy==1.24.3
+pandas==1.5.3
+scipy==1.11.2
+
+# Web Scraping and Data Collection
+requests==2.31.0
+beautifulsoup4==4.12.2
+selenium==4.11.2
+scrapy==2.10.1
+
+# Data Processing and Analysis
+matplotlib==3.7.2
+seaborn==0.12.2
+plotly==5.15.0
+
+# Async and Concurrency
+asyncio
+aiohttp==3.8.5
+celery==5.3.1  # For background tasks
+
+# Caching and Performance
+redis==4.6.0
+memcached==1.59
+
+# Monitoring and Logging
+prometheus-client==0.17.1
+structlog==23.1.0
+sentry-sdk[flask]==1.32.0
+
+# Security
+cryptography==41.0.4
+PyJWT==2.8.0
+bcrypt==4.0.1
+
+# Utilities
+python-dotenv==1.0.0
+click==8.1.7
+python-dateutil==2.8.2
+pytz==2023.3
+schedule==1.2.0
+
+# Development and Testing (optional in production)
+pytest==7.4.0
+pytest-flask==1.2.0
+pytest-cov==4.1.0
+black==23.7.0
+flake8==6.0.0
+
+# Production Server
+gunicorn==21.2.0
+gevent==23.7.0
+
+# Environment and Configuration
+python-decouple==3.8
+
